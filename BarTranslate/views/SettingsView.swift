@@ -140,42 +140,13 @@ struct SettingsView: View {
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
-                    #if !APPSTORE
                     SettingsRow(label: "Updates") {
                         Link("Check for updates",
                              destination: URL(string: "https://github.com/acoliver/BarTranslate/releases")!)
                         .font(.system(size: 12))
                     }
-                    #endif
                 }
 
-                #if !APPSTORE
-                // Sponsor
-                Link(destination: URL(string: "https://github.com/sponsors/ThijmenDam")!) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.pink)
-                        Text("Sponsor this project")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(NSColor.controlBackgroundColor))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color(NSColor.separatorColor).opacity(0.4), lineWidth: 0.5)
-                            )
-                    )
-                }
-                #endif
             }
             .padding(14)
         }

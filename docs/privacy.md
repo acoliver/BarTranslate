@@ -9,7 +9,8 @@ title: Privacy Policy
 
 ## Overview
 
-BarTranslate is built by Thijmen Dam as an open-source application. This Privacy Policy explains how data is handled when you use BarTranslate.
+BarTranslateACO is an open-source fork of BarTranslate. This Privacy Policy explains how data is handled when you use BarTranslateACO.
+
 
 ## Data We Collect
 
@@ -29,4 +30,5 @@ If this Privacy Policy changes, the updated version will be posted on this page 
 
 ## Contact
 
-If you have any questions about this Privacy Policy, you can reach out via [GitHub Discussions](https://github.com/ThijmenDam/BarTranslate/discussions).
+If you have any questions about this Privacy Policy, you can open an issue in [acoliver/BarTranslate](https://github.com/acoliver/BarTranslate/issues).
+

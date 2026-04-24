@@ -1,27 +1,33 @@
-# BarTranslate
+# BarTranslateACO
 
-🚀 A handy (free) menu bar translator widget for macOS.
+A dark-mode-friendly fork of [BarTranslate](https://github.com/ThijmenDam/BarTranslate), the handy menu bar translator widget for macOS.
 
 <p align="center">
-    <img src="docs/assets/images/bartranslate-appstore-promo-1.png" alt="BarTranslate promotional image 1"/>
+    <img src="docs/assets/images/bartranslate-dark-overview.png" alt="BarTranslateACO dark mode overview"/>
     <br/>
-    <img src="docs/assets/images/bartranslate-appstore-promo-2.png" alt="BarTranslate promotional image 2"/>
+    <img src="docs/assets/images/bartranslate-dark-settings.png" alt="BarTranslateACO dark mode settings"/>
 </p>
 
-Translations are done by presenting a simple (altered) webview of **Google Translate** in a quick and easily accessible interface.
+Translations are handled by presenting a streamlined webview of **Google Translate** in a quick, easily accessible menu bar interface.
 
-## Installation (App Store)
+## About this fork
 
-By downloading BarTranslate from the App Store, you support the project with a small fee. In addition, you get:
+BarTranslateACO is Andrew C. Oliver's fork of BarTranslate. It exists because this version needed dark-mode improvements, a fork-specific release path, and a place where changes can move independently when upstream pull-request review is slow.
 
-**Automatic updates**. Always run the latest version.
+Many thanks to [Thijmen Dam](https://github.com/ThijmenDam), the original BarTranslate author, for creating the app and releasing it as free software.
 
-**Apple notarization**. The App Store version is verified by Apple, so no Gatekeeper warnings or "unidentified developer" prompts. 
+This fork also uses a different logo and menu bar artwork. The updated design is intended to work better in dark mode and to read more clearly as a translator app instead of a generic app icon.
 
-<a href="https://apps.apple.com/nl/app/bartranslate/id6759278154">
-    <img src="docs/assets/images/download-on-the-appstore.svg" alt="Download on the Mac App Store" height="48"/>
-</a>
+Bugs, pull requests, and feature ideas are welcome in [acoliver/BarTranslate](https://github.com/acoliver/BarTranslate/issues).
 
+## Features
+
+* Menu bar access to Google Translate.
+* Dark-mode styling for translation pages and project graphics.
+* Configurable hotkeys to toggle the app.
+* Smart autofocus on the source text field when opening the app.
+* Optional automatic clipboard paste.
+* Fork-specific Homebrew and manual releases that install as `BarTranslateACO.app`.
 
 ## Installation (Homebrew)
 
@@ -45,20 +51,7 @@ The formula installs `BarTranslateACO.app` under Homebrew's prefix and provides 
 
 Release maintainers should see [docs/release.md](docs/release.md) for signing, notarization, and Homebrew tap secrets.
 
+## Planned
 
-
-Feel free to [share your ideas](https://github.com/ThijmenDam/BarTranslate/discussions)!
-
-* Translations are done by presenting a simple (altered) webview of **Google Translate** in a quick and easily accessible interface.
-* Configurable hotkeys to toggle the app.
-* Smart autofocus on the source text field when opening the app.
-
-### Planned
-
-* Dark mode for the translation pages.
 * Configurable hotkeys to select/swap languages.
 * Configurable hotkey to directly translate clipboard content.
-
-## Support the author
-
-Enjoying BarTranslate? Grab it on the [App Store](https://apps.apple.com/nl/app/bartranslate/id6759278154) to support continued development!
