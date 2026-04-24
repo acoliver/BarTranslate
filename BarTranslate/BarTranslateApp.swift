@@ -10,17 +10,6 @@ import SwiftUI
 import HotKey
 import WebKit
 
-@main
-struct BarTranslateApp: App {
-  @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-  var body: some Scene {
-    Settings {
-      SettingsView(BT: appDelegate.BT)
-    }
-  }
-}
-
 // MARK: - Panel Configuration
 
 private struct PanelConfig {
@@ -121,6 +110,17 @@ class BarTranslate: ObservableObject {
   func openGoogleTranslateHistory(provider: TranslationProvider) {
     guard let url = URL(string: "https://translate.google.com/history") else { return }
     loadURL(url, provider: provider)
+  }
+}
+
+@main
+enum BarTranslateApplication {
+  private static let appDelegate = AppDelegate()
+
+  static func main() {
+    let application = NSApplication.shared
+    application.delegate = appDelegate
+    application.run()
   }
 }
 
