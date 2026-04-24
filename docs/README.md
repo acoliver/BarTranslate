@@ -1,33 +1,30 @@
 <link rel="stylesheet" href="assets/css/style.css">
 
-<p align="center">
-    <img src="assets/images/bartranslate-dark-overview.png" alt="BarTranslateACO dark mode overview"/>
-    <br/>
-    <img src="assets/images/bartranslate-dark-settings.png" alt="BarTranslateACO dark mode settings"/>
-</p>
-
-BarTranslateACO is a dark-mode-friendly fork of [BarTranslate](https://github.com/ThijmenDam/BarTranslate), the handy menu bar translator widget for macOS.
+BarTranslateACO is a fork of [BarTranslate](https://github.com/ThijmenDam/BarTranslate), the handy menu bar translator widget for macOS.
 
 Translations are handled by presenting a streamlined webview of **Google Translate** in a quick, easily accessible menu bar interface.
 
 ## About this fork
 
-BarTranslateACO is Andrew C. Oliver's fork of BarTranslate. It exists because this version needed dark-mode improvements, a fork-specific release path, and a place where changes can move independently when upstream pull-request review is slow.
+BarTranslateACO is Andrew C. Oliver's fork of BarTranslate. It exists because this version needed theme-related fixes, a fork-specific release path, and a place where changes can move independently when upstream pull-request review is slow.
 
 Many thanks to [Thijmen Dam](https://github.com/ThijmenDam), the original BarTranslate author, for creating the app and releasing it as free software.
 
-This fork also uses a different logo and menu bar artwork. The updated design is intended to work better in dark mode and to read more clearly as a translator app instead of a generic app icon.
+This fork also uses a different logo and menu bar artwork. The updated design is intended to read more clearly as a translator app instead of a generic app icon.
 
 Bugs, pull requests, and feature ideas are welcome in [acoliver/BarTranslate](https://github.com/acoliver/BarTranslate/issues).
 
 ## Features
 
 * Menu bar access to Google Translate.
-* Dark-mode styling for translation pages and project graphics.
+* Native macOS theme behavior: the app follows the user's system light or dark appearance.
+* Translation page styling fixes, including avoiding Chinese text overlay problems in Google Translate.
+* Google sign-in support inside the translation webview so translation history can be preserved.
 * Configurable hotkeys to toggle the app.
 * Smart autofocus on the source text field when opening the app.
 * Optional automatic clipboard paste.
 * Fork-specific Homebrew and manual releases that install as `BarTranslateACO.app`.
+* Translator-specific app and menu bar icons.
 
 ## Installation (Homebrew)
 
