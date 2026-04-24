@@ -2,6 +2,12 @@
 
 BarTranslateACO is a fork of [BarTranslate](https://github.com/ThijmenDam/BarTranslate), the handy menu bar translator widget for macOS.
 
+<p align="center">
+    <img src="assets/images/bartranslate-translate.png" alt="BarTranslateACO translation panel" width="400"/>
+    <br/>
+    <img src="assets/images/bartranslate-settings.png" alt="BarTranslateACO settings panel" width="400"/>
+</p>
+
 Translations are handled by presenting a streamlined webview of **Google Translate** in a quick, easily accessible menu bar interface.
 
 ## About this fork
