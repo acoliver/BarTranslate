@@ -15,11 +15,6 @@ struct BarTranslateApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
   var body: some Scene {
-    WindowGroup {
-      EmptyView()
-    }.commands {
-      CommandGroup(replacing: CommandGroupPlacement.newItem) {}
-    }
     Settings {
       SettingsView(BT: appDelegate.BT)
     }
@@ -240,11 +235,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationDidFinishLaunching(_ notification: Notification) {
-    // Immediately close the main (empty) app window defined in 'BarTranslateApp'.
-    if let window = NSApplication.shared.windows.first {
-      window.close()
-    }
-
     let contentView = ContentView(BT: BT)
 
     // Application Panel
