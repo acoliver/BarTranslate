@@ -37,7 +37,7 @@ Bugs, pull requests, and feature ideas are welcome in [acoliver/BarTranslate](ht
 This fork is distributed with a fork-specific Homebrew formula so it can coexist with upstream BarTranslate:
 
 ```sh
-brew tap acoliver/tap
+brew tap acoliver/homebrew-tap
 brew install bartranslate-aco
 ```
 
