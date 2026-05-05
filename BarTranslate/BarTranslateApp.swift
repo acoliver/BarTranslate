@@ -277,6 +277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     panel.isMovableByWindowBackground = false
     panel.backgroundColor = .clear
     panel.hasShadow = true
+    panel.animationBehavior = .utilityWindow
     panel.delegate = self
 
     // Apply rounded corners to match popover appearance
