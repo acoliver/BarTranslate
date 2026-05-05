@@ -6,8 +6,7 @@
 .KIXMEf,                  /* Share button */
 .a8FIud,                  /* Favorite button */
 .nG3XIb,                  /* Rate translation button */
-.hgbeOc,                  /* Empty space at top */
-nav                       /* Buttons below translate input */
+.hgbeOc                   /* Empty space at top */
 {
   display: none !important;
 }

@@ -9,6 +9,7 @@
 import Foundation
 import SwiftUI
 import WebKit
+import Speech
 
 // MARK: - TranslateView
 
@@ -151,11 +152,17 @@ struct WebView: NSViewRepresentable {
 
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences = prefs
+        config.mediaTypesRequiringUserActionForPlayback = []
 
-        // Register JS → Swift message handlers
+        // Register JS -> Swift message handlers
         config.userContentController.add(context.coordinator, name: "charCount")
         config.userContentController.add(context.coordinator, name: "resultAvailable")
         config.userContentController.add(context.coordinator, name: "urlChanged")
+        config.userContentController.add(context.coordinator, name: "micButtonTapped")
+
+        config.userContentController.addUserScript(
+            WKUserScript(source: micHijackInjectionJS, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+        )
 
         #if DEBUG
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
@@ -164,6 +171,7 @@ struct WebView: NSViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isHidden = true
         webView.setValue(false, forKey: "drawsBackground")
+        webView.uiDelegate = context.coordinator
 
         BT.webView = webView
         return webView
@@ -182,15 +190,33 @@ struct WebView: NSViewRepresentable {
 
     // MARK: Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
         let parent: WebView
         var initialPageloadComplete = false
+        let speechService = SpeechRecognitionService()
 
         init(_ parent: WebView) {
             self.parent = parent
+            super.init()
+
+            speechService.onPartialResult = { [weak self] text in
+                guard let self, let webView = self.parent.BT.webView else { return }
+                injectLiveSpeechText(webView: webView, text: text)
+            }
+
+            speechService.onFinalResult = { [weak self] text in
+                guard let self, let webView = self.parent.BT.webView else { return }
+                injectLiveSpeechText(webView: webView, text: text)
+                webView.evaluateJavaScript("window.__btMicSetListening(false);")
+            }
+
+            speechService.onListeningChanged = { [weak self] listening in
+                guard let self, let webView = self.parent.BT.webView else { return }
+                webView.evaluateJavaScript("window.__btMicSetListening(\(listening));")
+            }
         }
 
-        // JS → Swift message handler
+        // JS -> Swift message handler
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             switch message.name {
 
@@ -215,6 +241,11 @@ struct WebView: NSViewRepresentable {
                     if let tl = langs.target { self.parent.BT.lastTargetLang = tl }
                 }
 
+            case "micButtonTapped":
+                DispatchQueue.main.async {
+                    self.speechService.toggleListening()
+                }
+
             default:
                 break
             }
@@ -229,6 +260,7 @@ struct WebView: NSViewRepresentable {
                 }
 
                 applyCSS(webView: webView, provider: self.parent.translationProvider)
+                webView.evaluateJavaScript(micHijackInjectionJS)
 
                 // Inject feature scripts after a short delay to let page settle
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -246,5 +278,168 @@ struct WebView: NSViewRepresentable {
                 self.parent.BT.characterCount = 0
             }
         }
+
+        // MARK: - WKUIDelegate
+
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(.grant)
+        }
     }
+}
+
+// MARK: - JavaScript helpers
+
+private func javaScriptStringLiteral(_ string: String) -> String {
+    guard let data = try? JSONSerialization.data(withJSONObject: [string]),
+          let arrayLiteral = String(data: data, encoding: .utf8),
+          arrayLiteral.count >= 2 else {
+        return "''"
+    }
+
+    return String(arrayLiteral.dropFirst().dropLast())
+}
+
+private let micHijackInjectionJS = """
+(function() {
+    if (window.__btMicHijackInstalled) return;
+    window.__btMicHijackInstalled = true;
+    window.__btMicListening = false;
+
+    function isMicButton(node) {
+        if (!node) return false;
+        var button = node.closest('button,[role="button"]');
+        if (!button) return false;
+
+        var label = [
+            button.getAttribute('aria-label'),
+            button.getAttribute('title'),
+            button.getAttribute('data-tooltip'),
+            button.getAttribute('data-tooltip-label'),
+            button.innerText
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        if (label.includes('listen') || label.includes('speaker') || label.includes('play') ||
+            label.includes('audio') || label.includes('read aloud') || label.includes('escuchar') ||
+            label.includes('altavoz') || label.includes('reproducir')) {
+            return false;
+        }
+
+        var hasMicLabel = label.includes('microphone') || label.includes('micrófono') ||
+                          label.includes('microfono') || label.includes('voice input') ||
+                          label.includes('voice typing') || label.includes('entrada de voz') ||
+                          label.includes('dictation') || label === '';
+
+        var textarea = document.querySelector('textarea');
+        if (!textarea) return false;
+
+        var buttonRect = button.getBoundingClientRect();
+        var textareaRect = textarea.getBoundingClientRect();
+        var nearSourceTextarea = Math.abs(buttonRect.top - textareaRect.top) < 260 && buttonRect.left < textareaRect.right + 320;
+        if (!nearSourceTextarea) return false;
+
+        if (hasMicLabel) return true;
+
+        var sourceControls = button.closest('.FFpbKc, [data-language-for-alternatives], form');
+        var hasMicIcon = !!button.querySelector('svg rect, svg path');
+        return !!(sourceControls && hasMicIcon && button.offsetWidth <= 72 && button.offsetHeight <= 72);
+    }
+
+    function nativeMicIcon(color) {
+        return '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">' +
+            '<rect x="9" y="2" width="6" height="11" rx="3" fill="' + color + '"/>' +
+            '<path d="M5 10v1a7 7 0 0014 0v-1" stroke="' + color + '" stroke-width="2" fill="none"/>' +
+            '<path d="M12 18v4" stroke="' + color + '" stroke-width="2"/>' +
+            '</svg>';
+    }
+
+    function nativeMicButton() {
+        var existing = document.getElementById('bt-native-mic-btn');
+        if (existing) return existing;
+
+        var textarea = document.querySelector('textarea');
+        if (!textarea || !textarea.parentElement) return null;
+
+        var btn = document.createElement('button');
+        btn.id = 'bt-native-mic-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Voice input');
+        btn.title = 'Voice input';
+        btn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:50%;background:rgba(0,0,0,0.06);cursor:pointer;padding:0;margin-left:6px;flex:0 0 auto;z-index:9999;';
+        btn.innerHTML = nativeMicIcon('#5f6368');
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            try { window.webkit.messageHandlers.micButtonTapped.postMessage({}); } catch(ex) {}
+        }, true);
+
+        var parent = textarea.parentElement;
+        parent.style.display = 'flex';
+        parent.style.alignItems = 'center';
+        parent.appendChild(btn);
+        return btn;
+    }
+
+    function markMicButton(listening) {
+        var nativeButton = nativeMicButton();
+        if (nativeButton) {
+            nativeButton.style.backgroundColor = listening ? 'rgba(255,59,48,0.16)' : 'rgba(0,0,0,0.06)';
+            nativeButton.style.outline = listening ? '2px solid rgba(255,59,48,0.8)' : '';
+            nativeButton.title = listening ? 'Stop voice input' : 'Voice input';
+            nativeButton.innerHTML = nativeMicIcon(listening ? '#d93025' : '#5f6368');
+        }
+
+        var buttons = Array.from(document.querySelectorAll('button,[role="button"]'));
+        buttons.forEach(function(button) {
+            if (button.id === 'bt-native-mic-btn' || !isMicButton(button)) return;
+            button.setAttribute('data-bt-native-mic', 'true');
+            button.style.outline = listening ? '2px solid rgba(255,59,48,0.8)' : '';
+            button.style.borderRadius = listening ? '50%' : '';
+            button.style.backgroundColor = listening ? 'rgba(255,59,48,0.15)' : '';
+            button.title = listening ? 'Stop voice input' : 'Voice input';
+        });
+    }
+
+    window.__btMicSetListening = function(listening) {
+        window.__btMicListening = listening;
+        markMicButton(listening);
+    };
+
+    document.addEventListener('click', function(event) {
+        if (!isMicButton(event.target)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        try { window.webkit.messageHandlers.micButtonTapped.postMessage({}); } catch(ex) {}
+    }, true);
+
+    var observer = new MutationObserver(function() { markMicButton(window.__btMicListening); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    markMicButton(false);
+})();
+"""
+
+/// Updates the Google Translate textarea with live speech recognition text.
+func injectLiveSpeechText(webView: WKWebView, text: String) {
+    let textLiteral = javaScriptStringLiteral(text)
+    let js = """
+    (function() {
+        var ta = document.querySelector('textarea');
+        if (!ta) return;
+
+        var setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+        setter.call(ta, \(textLiteral));
+        ta.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: \(textLiteral) }));
+        ta.dispatchEvent(new Event('change', { bubbles: true }));
+        ta.focus();
+    })();
+    """
+
+    webView.evaluateJavaScript(js)
 }
