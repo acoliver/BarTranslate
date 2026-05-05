@@ -39,9 +39,14 @@ notary_zip_path="${artifact_dir}/notarization-${asset_name}"
 rm -rf "${artifact_dir}"
 mkdir -p "${artifact_dir}" "$(dirname "${unsigned_app_path}")"
 
+release_metadata_path="${artifact_dir}/Version.xcconfig"
+cat > "${release_metadata_path}" <<EOF
+MARKETING_VERSION = ${version}
+CURRENT_PROJECT_VERSION = ${GITHUB_RUN_NUMBER:-1}
+EOF
+
 common_build_settings=(
-  MARKETING_VERSION="${version}"
-  CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER:-1}"
+  -xcconfig "${release_metadata_path}"
   PRODUCT_BUNDLE_IDENTIFIER="${bundle_identifier}"
   PRODUCT_NAME="${app_display_name}"
   INFOPLIST_KEY_CFBundleDisplayName="${app_display_name}"

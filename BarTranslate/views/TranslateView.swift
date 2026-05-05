@@ -326,14 +326,16 @@ private let micHijackInjectionJS = """
 
         if (label.includes('listen') || label.includes('speaker') || label.includes('play') ||
             label.includes('audio') || label.includes('read aloud') || label.includes('escuchar') ||
-            label.includes('altavoz') || label.includes('reproducir')) {
+            label.includes('altavoz') || label.includes('reproducir') ||
+            label.includes('keyboard') || label.includes('input tools') || label.includes('teclado')) {
             return false;
         }
 
         var hasMicLabel = label.includes('microphone') || label.includes('micrófono') ||
                           label.includes('microfono') || label.includes('voice input') ||
                           label.includes('voice typing') || label.includes('entrada de voz') ||
-                          label.includes('dictation') || label === '';
+                          label.includes('dictation');
+        if (!hasMicLabel) return false;
 
         var textarea = document.querySelector('textarea');
         if (!textarea) return false;
@@ -341,13 +343,7 @@ private let micHijackInjectionJS = """
         var buttonRect = button.getBoundingClientRect();
         var textareaRect = textarea.getBoundingClientRect();
         var nearSourceTextarea = Math.abs(buttonRect.top - textareaRect.top) < 260 && buttonRect.left < textareaRect.right + 320;
-        if (!nearSourceTextarea) return false;
-
-        if (hasMicLabel) return true;
-
-        var sourceControls = button.closest('.FFpbKc, [data-language-for-alternatives], form');
-        var hasMicIcon = !!button.querySelector('svg rect, svg path');
-        return !!(sourceControls && hasMicIcon && button.offsetWidth <= 72 && button.offsetHeight <= 72);
+        return nearSourceTextarea;
     }
 
     function nativeMicIcon(color) {

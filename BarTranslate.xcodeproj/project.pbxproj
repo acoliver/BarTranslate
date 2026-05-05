@@ -44,6 +44,7 @@
 		45D1EF7B2A20DA300029FACD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		45D1EF7E2A20DA300029FACD /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		45D1EF802A20DA300029FACD /* BarTranslate.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BarTranslate.entitlements; sourceTree = "<group>"; };
+		45D1EF862F13A00000000001 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		45E081CB2A68003E00D90780 /* DefaultSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSettings.swift; sourceTree = "<group>"; };
 		45E081CE2F70B00000B00002 /* LoginItemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemService.swift; sourceTree = "<group>"; };
 		45E1DB2C2A23312E00FA549C /* TopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopView.swift; sourceTree = "<group>"; };
@@ -109,6 +110,7 @@
 				45A000032F13A00000000003 /* MenuIconStatus.png */,
 				45A000042F13A00000000004 /* MenuIconMinimalStatus.png */,
 				45D1EF7B2A20DA300029FACD /* Assets.xcassets */,
+				45D1EF862F13A00000000001 /* Version.xcconfig */,
 				45D1EF802A20DA300029FACD /* BarTranslate.entitlements */,
 			);
 			path = BarTranslate;
@@ -362,13 +364,13 @@
 		};
 		45D1EF842A20DA300029FACD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 45D1EF862F13A00000000001 /* Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = BarTranslate/BarTranslate.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"BarTranslate/Preview Content\"";
 				DEVELOPMENT_TEAM = G7QJ269WC7;
@@ -385,7 +387,6 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.acoliver.BarTranslateACO;
 				PRODUCT_NAME = BarTranslateACO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -395,13 +396,13 @@
 		};
 		45D1EF852A20DA300029FACD /* Release (GitHub) */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 45D1EF862F13A00000000001 /* Version.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = BarTranslate/BarTranslate.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"BarTranslate/Preview Content\"";
 				DEVELOPMENT_TEAM = G7QJ269WC7;
@@ -418,7 +419,6 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.acoliver.BarTranslateACO;
 				PRODUCT_NAME = BarTranslateACO;
 				SWIFT_EMIT_LOC_STRINGS = YES;

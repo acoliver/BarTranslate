@@ -26,6 +26,10 @@ class SpeechRecognitionService: ObservableObject {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     }
 
+    deinit {
+        teardown()
+    }
+
     func toggleListening() {
         if isListening {
             stopListening()
@@ -79,7 +83,6 @@ class SpeechRecognitionService: ObservableObject {
     }
 
     func stopListening() {
-        guard isListening else { return }
         let finalText = latestTranscript
         endRecording(sendFinalResult: false, cancelTask: true)
 
@@ -164,20 +167,25 @@ class SpeechRecognitionService: ObservableObject {
     }
 
     private func stopAudioCapture(cancelTask: Bool) {
-        recognitionRequest?.endAudio()
-        if cancelTask {
-            recognitionTask?.cancel()
-        } else {
-            recognitionTask?.finish()
-        }
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-        audioEngine?.pause()
-        audioEngine?.reset()
+        let engine = audioEngine
+        let request = recognitionRequest
+        let task = recognitionTask
 
         recognitionRequest = nil
         recognitionTask = nil
         audioEngine = nil
+
+        engine?.inputNode.removeTap(onBus: 0)
+        engine?.stop()
+        engine?.pause()
+        engine?.reset()
+
+        request?.endAudio()
+        if cancelTask {
+            task?.cancel()
+        } else {
+            task?.finish()
+        }
     }
 
     private func setListening(_ listening: Bool) {
