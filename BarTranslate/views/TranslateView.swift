@@ -299,7 +299,7 @@ struct WebView: NSViewRepresentable {
             requestMediaCapturePermissionFor origin: WKSecurityOrigin,
             initiatedByFrame frame: WKFrameInfo,
             type: WKMediaCaptureType,
-            decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
+            decisionHandler: @escaping (WKPermissionDecision) -> Void
         ) {
             decisionHandler(.grant)
         }
