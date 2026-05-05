@@ -159,6 +159,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   var panel: NSPanel!
   var statusBarItem: NSStatusItem!
   var hotkeyToggleApp: HotKey!
+  var isPanelExpandedForKeyboard = false
 
   var BT: BarTranslate = BarTranslate()
 
@@ -170,6 +171,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   override init() {
     super.init()
+    AppDelegate.instance = self
     UserDefaults.standard.addObserver(self, forKeyPath: "showHideKey", options: .new, context: nil)
     UserDefaults.standard.addObserver(self, forKeyPath: "showHideModifier", options: .new, context: nil)
     UserDefaults.standard.addObserver(self, forKeyPath: "menuBarIcon", options: .new, context: nil)
@@ -319,11 +321,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
+  func setKeyboardPanelExpanded(_ expanded: Bool) {
+    guard isPanelExpandedForKeyboard != expanded else { return }
+    isPanelExpandedForKeyboard = expanded
+
+    let size = expanded ? expandedPanelSize() : normalPanelSize()
+    var frame = panel.frame
+    frame.size = size
+    panel.setFrame(frame, display: true, animate: panel.isVisible)
+    positionPanel()
+  }
+
+  private func normalPanelSize() -> NSSize {
+    NSSize(width: Constants.AppSize.width, height: Constants.AppSize.height)
+  }
+
+  private func expandedPanelSize() -> NSSize {
+    let fallbackSize = NSSize(width: Constants.AppSize.keyboardExpandedWidth, height: Constants.AppSize.keyboardExpandedHeight)
+    guard let screen = panel.screen ?? NSScreen.main else { return fallbackSize }
+
+    let screenFrame = screen.visibleFrame.insetBy(dx: PanelConfig.menuBarGap, dy: PanelConfig.menuBarGap)
+    return NSSize(
+      width: min(fallbackSize.width, screenFrame.width),
+      height: min(fallbackSize.height, screenFrame.height)
+    )
+  }
+
   // Show or hide BarTranslate panel
   @objc func togglePanel(_ sender: AnyObject?) {
     if panel.isVisible {
       panel.orderOut(sender)
     } else {
+      setKeyboardPanelExpanded(false)
       positionPanel()
       panel.makeKeyAndOrderFront(sender)
       NSApp.activate(ignoringOtherApps: true)

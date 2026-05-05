@@ -13,5 +13,7 @@ struct Constants {
   struct AppSize {
     static let width = CGFloat(400)
     static let height = CGFloat(500)
+    static let keyboardExpandedWidth = CGFloat(720)
+    static let keyboardExpandedHeight = CGFloat(720)
   }
 }
