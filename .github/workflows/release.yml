@@ -17,7 +17,7 @@ permissions:
 jobs:
   release:
     name: Build and publish macOS release
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       BARTRANSLATE_APP_NAME: BarTranslateACO
       BARTRANSLATE_BUNDLE_IDENTIFIER: com.acoliver.BarTranslateACO
@@ -51,9 +51,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -d /Applications/Xcode_15.4.app ]]; then
-            sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
-          fi
           xcodebuild -version
 
       - name: Validate Homebrew tap secret
