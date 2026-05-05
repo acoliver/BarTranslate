@@ -3,7 +3,7 @@
 //  BarTranslate
 //
 //  Created by Thijmen Dam on 28/05/2023.
-//  Redesigned UI + Feature overlays: copy button, char counter, mic button
+//  Redesigned UI + Feature overlays: copy button, char counter
 //
 
 import Foundation
@@ -48,8 +48,6 @@ struct TranslateView: View {
                         // Character counter – bottom left
                         CharCounterBadge(count: BT.characterCount)
                         Spacer()
-                        // Mic button – bottom center-right
-                        MicButton(BT: BT)
                         // Copy button – bottom right
                         CopyResultButton(BT: BT, provider: translationProvider)
                     }
@@ -86,55 +84,6 @@ struct CharCounterBadge: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 .animation(.easeInOut(duration: 0.2), value: count)
         }
-    }
-}
-
-// MARK: - Microphone Button
-
-struct MicButton: View {
-    @ObservedObject var BT: BarTranslate
-    @StateObject private var speechService = SpeechRecognitionService()
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: toggleMic) {
-            HStack(spacing: 5) {
-                Image(systemName: speechService.isListening ? "mic.fill" : "mic")
-                    .font(.system(size: 11, weight: .medium))
-                if speechService.isListening {
-                    Text("Listening…")
-                        .font(.system(size: 11, weight: .medium))
-                }
-            }
-            .foregroundColor(speechService.isListening ? Color(NSColor.systemRed) : (isHovered ? .primary : .secondary))
-            .padding(.horizontal, speechService.isListening ? 12 : 8)
-            .padding(.vertical, 5)
-            .background(speechService.isListening ? Color(NSColor.systemRed).opacity(0.15) : Color.clear)
-            .background(.ultraThinMaterial)
-            .cornerRadius(7)
-            .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .stroke(
-                        speechService.isListening
-                            ? Color(NSColor.systemRed).opacity(0.5)
-                            : Color(NSColor.separatorColor).opacity(isHovered ? 0.6 : 0.3),
-                        lineWidth: 0.5
-                    )
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-        .onHover { isHovered = $0 }
-        .animation(.easeInOut(duration: 0.18), value: speechService.isListening)
-        .onAppear {
-            speechService.onResult = { [self] text in
-                guard let webView = self.BT.webView else { return }
-                injectClipboardText(webView: webView, text: text)
-            }
-        }
-    }
-
-    private func toggleMic() {
-        speechService.toggleListening()
     }
 }
 
@@ -203,14 +152,17 @@ struct WebView: NSViewRepresentable {
 
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences = prefs
-
-        // Allow media playback (including microphone) without requiring a user gesture
         config.mediaTypesRequiringUserActionForPlayback = []
 
-        // Register JS → Swift message handlers
+        // Register JS -> Swift message handlers
         config.userContentController.add(context.coordinator, name: "charCount")
         config.userContentController.add(context.coordinator, name: "resultAvailable")
         config.userContentController.add(context.coordinator, name: "urlChanged")
+        config.userContentController.add(context.coordinator, name: "micButtonTapped")
+
+        config.userContentController.addUserScript(
+            WKUserScript(source: micHijackInjectionJS, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+        )
 
         #if DEBUG
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
@@ -219,8 +171,6 @@ struct WebView: NSViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isHidden = true
         webView.setValue(false, forKey: "drawsBackground")
-
-        // Set UI delegate so the web view can grant microphone permission
         webView.uiDelegate = context.coordinator
 
         BT.webView = webView
@@ -243,12 +193,30 @@ struct WebView: NSViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
         let parent: WebView
         var initialPageloadComplete = false
+        let speechService = SpeechRecognitionService()
 
         init(_ parent: WebView) {
             self.parent = parent
+            super.init()
+
+            speechService.onPartialResult = { [weak self] text in
+                guard let self, let webView = self.parent.BT.webView else { return }
+                injectLiveSpeechText(webView: webView, text: text)
+            }
+
+            speechService.onFinalResult = { [weak self] text in
+                guard let self, let webView = self.parent.BT.webView else { return }
+                injectLiveSpeechText(webView: webView, text: text)
+                webView.evaluateJavaScript("window.__btMicSetListening(false);")
+            }
+
+            speechService.onListeningChanged = { [weak self] listening in
+                guard let self, let webView = self.parent.BT.webView else { return }
+                webView.evaluateJavaScript("window.__btMicSetListening(\(listening));")
+            }
         }
 
-        // JS → Swift message handler
+        // JS -> Swift message handler
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             switch message.name {
 
@@ -273,6 +241,11 @@ struct WebView: NSViewRepresentable {
                     if let tl = langs.target { self.parent.BT.lastTargetLang = tl }
                 }
 
+            case "micButtonTapped":
+                DispatchQueue.main.async {
+                    self.speechService.toggleListening()
+                }
+
             default:
                 break
             }
@@ -287,6 +260,7 @@ struct WebView: NSViewRepresentable {
                 }
 
                 applyCSS(webView: webView, provider: self.parent.translationProvider)
+                webView.evaluateJavaScript(micHijackInjectionJS)
 
                 // Inject feature scripts after a short delay to let page settle
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -307,7 +281,6 @@ struct WebView: NSViewRepresentable {
 
         // MARK: - WKUIDelegate
 
-        // Grant microphone permission when Google Translate requests it
         func webView(
             _ webView: WKWebView,
             requestMediaCapturePermissionFor origin: WKSecurityOrigin,
@@ -318,4 +291,107 @@ struct WebView: NSViewRepresentable {
             decisionHandler(.grant)
         }
     }
+}
+
+// MARK: - JavaScript helpers
+
+private func javaScriptStringLiteral(_ string: String) -> String {
+    guard let data = try? JSONSerialization.data(withJSONObject: [string]),
+          let arrayLiteral = String(data: data, encoding: .utf8),
+          arrayLiteral.count >= 2 else {
+        return "''"
+    }
+
+    return String(arrayLiteral.dropFirst().dropLast())
+}
+
+private let micHijackInjectionJS = """
+(function() {
+    if (window.__btMicHijackInstalled) return;
+    window.__btMicHijackInstalled = true;
+    window.__btMicListening = false;
+
+    function isMicButton(node) {
+        if (!node) return false;
+        var button = node.closest('button,[role="button"]');
+        if (!button) return false;
+
+        var label = [
+            button.getAttribute('aria-label'),
+            button.getAttribute('title'),
+            button.getAttribute('data-tooltip'),
+            button.getAttribute('data-tooltip-label'),
+            button.innerText
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        if (label.includes('listen') || label.includes('speaker') || label.includes('play') ||
+            label.includes('audio') || label.includes('read aloud') || label.includes('escuchar') ||
+            label.includes('altavoz') || label.includes('reproducir')) {
+            return false;
+        }
+
+        var hasMicLabel = label.includes('microphone') || label.includes('micrófono') ||
+                          label.includes('microfono') || label.includes('voice input') ||
+                          label.includes('voice typing') || label.includes('entrada de voz') ||
+                          label.includes('dictation');
+        if (!hasMicLabel) return false;
+
+        var sourceInputArea = button.closest('.FFpbKc, [data-language-for-alternatives], form');
+        var textarea = document.querySelector('textarea');
+        if (!sourceInputArea || !textarea) return false;
+
+        var buttonRect = button.getBoundingClientRect();
+        var textareaRect = textarea.getBoundingClientRect();
+        var nearSourceTextarea = Math.abs(buttonRect.top - textareaRect.top) < 220 && buttonRect.left < textareaRect.right + 260;
+        return nearSourceTextarea;
+    }
+
+    function markMicButton(listening) {
+        var buttons = Array.from(document.querySelectorAll('button,[role="button"]'));
+        buttons.forEach(function(button) {
+            if (!isMicButton(button)) return;
+            button.setAttribute('data-bt-native-mic', 'true');
+            button.style.outline = listening ? '2px solid rgba(255,59,48,0.8)' : '';
+            button.style.borderRadius = listening ? '50%' : '';
+            button.style.backgroundColor = listening ? 'rgba(255,59,48,0.15)' : '';
+            button.title = listening ? 'Stop voice input' : 'Voice input';
+        });
+    }
+
+    window.__btMicSetListening = function(listening) {
+        window.__btMicListening = listening;
+        markMicButton(listening);
+    };
+
+    document.addEventListener('click', function(event) {
+        if (!isMicButton(event.target)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        try { window.webkit.messageHandlers.micButtonTapped.postMessage({}); } catch(ex) {}
+    }, true);
+
+    var observer = new MutationObserver(function() { markMicButton(window.__btMicListening); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    markMicButton(false);
+})();
+"""
+
+/// Updates the Google Translate textarea with live speech recognition text.
+func injectLiveSpeechText(webView: WKWebView, text: String) {
+    let textLiteral = javaScriptStringLiteral(text)
+    let js = """
+    (function() {
+        var ta = document.querySelector('textarea');
+        if (!ta) return;
+
+        var setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+        setter.call(ta, \(textLiteral));
+        ta.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: \(textLiteral) }));
+        ta.dispatchEvent(new Event('change', { bubbles: true }));
+        ta.focus();
+    })();
+    """
+
+    webView.evaluateJavaScript(js)
 }
