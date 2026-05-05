@@ -11,3 +11,8 @@ nav                       /* Buttons below translate input */
 {
   display: none !important;
 }
+
+/* Ensure the microphone / speech-input area remains visible */
+.FFpbKc {
+  display: flex !important;
+}

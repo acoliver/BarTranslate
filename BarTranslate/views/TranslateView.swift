@@ -152,6 +152,9 @@ struct WebView: NSViewRepresentable {
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences = prefs
 
+        // Allow media playback (including microphone) without requiring a user gesture
+        config.mediaTypesRequiringUserActionForPlayback = []
+
         // Register JS → Swift message handlers
         config.userContentController.add(context.coordinator, name: "charCount")
         config.userContentController.add(context.coordinator, name: "resultAvailable")
@@ -164,6 +167,9 @@ struct WebView: NSViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isHidden = true
         webView.setValue(false, forKey: "drawsBackground")
+
+        // Set UI delegate so the web view can grant microphone permission
+        webView.uiDelegate = context.coordinator
 
         BT.webView = webView
         return webView
@@ -182,7 +188,7 @@ struct WebView: NSViewRepresentable {
 
     // MARK: Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
         let parent: WebView
         var initialPageloadComplete = false
 
@@ -245,6 +251,19 @@ struct WebView: NSViewRepresentable {
                 self.parent.BT.hasResult = false
                 self.parent.BT.characterCount = 0
             }
+        }
+
+        // MARK: - WKUIDelegate
+
+        // Grant microphone permission when Google Translate requests it
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(.grant)
         }
     }
 }
