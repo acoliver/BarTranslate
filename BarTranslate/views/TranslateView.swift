@@ -159,9 +159,13 @@ struct WebView: NSViewRepresentable {
         config.userContentController.add(context.coordinator, name: "resultAvailable")
         config.userContentController.add(context.coordinator, name: "urlChanged")
         config.userContentController.add(context.coordinator, name: "micButtonTapped")
+        config.userContentController.add(context.coordinator, name: "keyboardVisibility")
 
         config.userContentController.addUserScript(
             WKUserScript(source: micHijackInjectionJS, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+        )
+        config.userContentController.addUserScript(
+            WKUserScript(source: keyboardVisibilityInjectionJS, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
         )
 
         #if DEBUG
@@ -246,6 +250,13 @@ struct WebView: NSViewRepresentable {
                     self.speechService.toggleListening()
                 }
 
+            case "keyboardVisibility":
+                if let visible = message.body as? Bool {
+                    DispatchQueue.main.async {
+                        AppDelegate.instance?.setKeyboardPanelExpanded(visible)
+                    }
+                }
+
             default:
                 break
             }
@@ -261,6 +272,7 @@ struct WebView: NSViewRepresentable {
 
                 applyCSS(webView: webView, provider: self.parent.translationProvider)
                 webView.evaluateJavaScript(micHijackInjectionJS)
+                webView.evaluateJavaScript(keyboardVisibilityInjectionJS)
 
                 // Inject feature scripts after a short delay to let page settle
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -276,6 +288,7 @@ struct WebView: NSViewRepresentable {
                 self.parent.BT.isLoading = true
                 self.parent.BT.hasResult = false
                 self.parent.BT.characterCount = 0
+                AppDelegate.instance?.setKeyboardPanelExpanded(false)
             }
         }
 
@@ -420,6 +433,95 @@ private let micHijackInjectionJS = """
     markMicButton(false);
 })();
 """
+
+private let keyboardVisibilityInjectionJS = """
+(function() {
+    if (window.__btKeyboardVisibilityInstalled) return;
+    window.__btKeyboardVisibilityInstalled = true;
+    window.__btKeyboardVisible = false;
+
+    function keyboardLabel(node) {
+        if (!node) return '';
+        return [
+            node.getAttribute && node.getAttribute('aria-label'),
+            node.getAttribute && node.getAttribute('title'),
+            node.getAttribute && node.getAttribute('data-tooltip'),
+            node.getAttribute && node.getAttribute('data-tooltip-label'),
+            node.innerText
+        ].filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function isKeyboardTrigger(node) {
+        var button = node && node.closest && node.closest('button,[role="button"]');
+        if (!button) return false;
+
+        var label = keyboardLabel(button);
+        return label.includes('keyboard') || label.includes('input tools') || label.includes('teclado');
+    }
+
+    function hasVisibleKeyboardPanel() {
+        var candidates = Array.from(document.querySelectorAll([
+            '[aria-label*="keyboard" i]',
+            '[aria-label*="input tools" i]',
+            '[aria-label*="teclado" i]',
+            '[title*="keyboard" i]',
+            '[title*="input tools" i]',
+            '[title*="teclado" i]',
+            '.ita-kd-inputtools-div',
+            '.ita-kd-menu',
+            '.ita-kd-dropdown-menu',
+            '.ita-hwt-container',
+            '.ita-hwt-content',
+            '.vk-box',
+            '.vk-t',
+            '.vk-t-btn'
+        ].join(',')));
+
+        return candidates.some(function(node) {
+            if (!node || isKeyboardTrigger(node)) return false;
+
+            var style = window.getComputedStyle(node);
+            if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+
+            var rect = node.getBoundingClientRect();
+            var area = rect.width * rect.height;
+            return rect.width >= 180 && rect.height >= 80 && area >= 18000;
+        });
+    }
+
+    function postVisibility(visible) {
+        if (visible === window.__btKeyboardVisible) return;
+        window.__btKeyboardVisible = visible;
+        try { window.webkit.messageHandlers.keyboardVisibility.postMessage(visible); } catch(ex) {}
+    }
+
+    function checkVisibility() {
+        window.clearTimeout(window.__btKeyboardVisibilityTimer);
+        window.__btKeyboardVisibilityTimer = window.setTimeout(function() {
+            postVisibility(hasVisibleKeyboardPanel());
+        }, 80);
+    }
+
+    document.addEventListener('click', function(event) {
+        if (isKeyboardTrigger(event.target)) {
+            window.setTimeout(checkVisibility, 250);
+            window.setTimeout(checkVisibility, 700);
+        }
+    }, true);
+
+    var observer = new MutationObserver(checkVisibility);
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class', 'aria-expanded', 'aria-hidden']
+    });
+
+    window.addEventListener('resize', checkVisibility);
+    checkVisibility();
+})();
+"""
+
 
 /// Updates the Google Translate textarea with live speech recognition text.
 func injectLiveSpeechText(webView: WKWebView, text: String) {
