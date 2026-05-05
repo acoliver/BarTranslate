@@ -132,8 +132,10 @@ class SpeechRecognitionService: ObservableObject {
 
             let text = result.bestTranscription.formattedString
             DispatchQueue.main.async {
-                self.latestTranscript = text
-                self.onPartialResult?(text)
+                if !text.isEmpty {
+                    self.latestTranscript = text
+                    self.onPartialResult?(text)
+                }
 
                 if result.isFinal {
                     self.endRecording(sendFinalResult: false, cancelTask: false)
@@ -148,19 +150,7 @@ class SpeechRecognitionService: ObservableObject {
     private func endRecording(sendFinalResult: Bool, cancelTask: Bool) {
         let finalText = latestTranscript
 
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        recognitionRequest?.endAudio()
-        if cancelTask {
-            recognitionTask?.cancel()
-        } else {
-            recognitionTask?.finish()
-        }
-
-        recognitionRequest = nil
-        recognitionTask = nil
-        audioEngine = nil
-
+        stopAudioCapture(cancelTask: cancelTask)
         setListening(false)
 
         if sendFinalResult && !finalText.isEmpty {
@@ -169,15 +159,25 @@ class SpeechRecognitionService: ObservableObject {
     }
 
     private func teardown() {
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
+        stopAudioCapture(cancelTask: true)
+        setListening(false)
+    }
 
-        audioEngine = nil
+    private func stopAudioCapture(cancelTask: Bool) {
+        recognitionRequest?.endAudio()
+        if cancelTask {
+            recognitionTask?.cancel()
+        } else {
+            recognitionTask?.finish()
+        }
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
+        audioEngine?.pause()
+        audioEngine?.reset()
+
         recognitionRequest = nil
         recognitionTask = nil
-        setListening(false)
+        audioEngine = nil
     }
 
     private func setListening(_ listening: Bool) {

@@ -333,23 +333,71 @@ private let micHijackInjectionJS = """
         var hasMicLabel = label.includes('microphone') || label.includes('micrófono') ||
                           label.includes('microfono') || label.includes('voice input') ||
                           label.includes('voice typing') || label.includes('entrada de voz') ||
-                          label.includes('dictation');
-        if (!hasMicLabel) return false;
+                          label.includes('dictation') || label === '';
 
-        var sourceInputArea = button.closest('.FFpbKc, [data-language-for-alternatives], form');
         var textarea = document.querySelector('textarea');
-        if (!sourceInputArea || !textarea) return false;
+        if (!textarea) return false;
 
         var buttonRect = button.getBoundingClientRect();
         var textareaRect = textarea.getBoundingClientRect();
-        var nearSourceTextarea = Math.abs(buttonRect.top - textareaRect.top) < 220 && buttonRect.left < textareaRect.right + 260;
-        return nearSourceTextarea;
+        var nearSourceTextarea = Math.abs(buttonRect.top - textareaRect.top) < 260 && buttonRect.left < textareaRect.right + 320;
+        if (!nearSourceTextarea) return false;
+
+        if (hasMicLabel) return true;
+
+        var sourceControls = button.closest('.FFpbKc, [data-language-for-alternatives], form');
+        var hasMicIcon = !!button.querySelector('svg rect, svg path');
+        return !!(sourceControls && hasMicIcon && button.offsetWidth <= 72 && button.offsetHeight <= 72);
+    }
+
+    function nativeMicIcon(color) {
+        return '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">' +
+            '<rect x="9" y="2" width="6" height="11" rx="3" fill="' + color + '"/>' +
+            '<path d="M5 10v1a7 7 0 0014 0v-1" stroke="' + color + '" stroke-width="2" fill="none"/>' +
+            '<path d="M12 18v4" stroke="' + color + '" stroke-width="2"/>' +
+            '</svg>';
+    }
+
+    function nativeMicButton() {
+        var existing = document.getElementById('bt-native-mic-btn');
+        if (existing) return existing;
+
+        var textarea = document.querySelector('textarea');
+        if (!textarea || !textarea.parentElement) return null;
+
+        var btn = document.createElement('button');
+        btn.id = 'bt-native-mic-btn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Voice input');
+        btn.title = 'Voice input';
+        btn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:50%;background:rgba(0,0,0,0.06);cursor:pointer;padding:0;margin-left:6px;flex:0 0 auto;z-index:9999;';
+        btn.innerHTML = nativeMicIcon('#5f6368');
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            try { window.webkit.messageHandlers.micButtonTapped.postMessage({}); } catch(ex) {}
+        }, true);
+
+        var parent = textarea.parentElement;
+        parent.style.display = 'flex';
+        parent.style.alignItems = 'center';
+        parent.appendChild(btn);
+        return btn;
     }
 
     function markMicButton(listening) {
+        var nativeButton = nativeMicButton();
+        if (nativeButton) {
+            nativeButton.style.backgroundColor = listening ? 'rgba(255,59,48,0.16)' : 'rgba(0,0,0,0.06)';
+            nativeButton.style.outline = listening ? '2px solid rgba(255,59,48,0.8)' : '';
+            nativeButton.title = listening ? 'Stop voice input' : 'Voice input';
+            nativeButton.innerHTML = nativeMicIcon(listening ? '#d93025' : '#5f6368');
+        }
+
         var buttons = Array.from(document.querySelectorAll('button,[role="button"]'));
         buttons.forEach(function(button) {
-            if (!isMicButton(button)) return;
+            if (button.id === 'bt-native-mic-btn' || !isMicButton(button)) return;
             button.setAttribute('data-bt-native-mic', 'true');
             button.style.outline = listening ? '2px solid rgba(255,59,48,0.8)' : '';
             button.style.borderRadius = listening ? '50%' : '';
