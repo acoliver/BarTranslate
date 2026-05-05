@@ -26,6 +26,8 @@
 		45E44E562A23BEB500226A82 /* style.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45E44E552A23BEB500226A82 /* style.swift */; };
 		45EF05232A234EAF00F5B8D4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45EF05222A234EAF00F5B8D4 /* SettingsView.swift */; };
 		45FDE0012DDA10000000001 /* features.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45FDE0022DDA10000000001 /* features.swift */; };
+		45B000012F13A00000000005 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
+		45B000012F13A00000000006 /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45B000032F13A00000000008 /* SpeechRecognitionService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +51,8 @@
 		45E44E552A23BEB500226A82 /* style.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = style.swift; sourceTree = "<group>"; };
 		45EF05222A234EAF00F5B8D4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		45FDE0022DDA10000000001 /* features.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = features.swift; sourceTree = "<group>"; };
+		45B000032F13A00000000007 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
+		45B000032F13A00000000008 /* SpeechRecognitionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +61,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				454BD6B02A384AD20014F9EB /* HotKey in Frameworks */,
+				45B000012F13A00000000005 /* Speech.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				45D1EF7D2A20DA300029FACD /* Preview Content */,
+				45B000032F13A00000000007 /* Speech.framework */,
 				45E44E542A23BE9C00226A82 /* injections */,
 				45E1DB2A2A232CE900FA549C /* views */,
 				45D1EF772A20DA2D0029FACD /* BarTranslateApp.swift */,
@@ -99,6 +105,7 @@
 				45E081CB2A68003E00D90780 /* DefaultSettings.swift */,
 				45E081CE2F70B00000B00002 /* LoginItemService.swift */,
 				4585105A2A69BD0100C21BD0 /* KeysAndModifiers.swift */,
+				45B000032F13A00000000008 /* SpeechRecognitionService.swift */,
 				45A000032F13A00000000003 /* MenuIconStatus.png */,
 				45A000042F13A00000000004 /* MenuIconMinimalStatus.png */,
 				45D1EF7B2A20DA300029FACD /* Assets.xcassets */,
@@ -229,6 +236,7 @@
 				45D1EF782A20DA2D0029FACD /* BarTranslateApp.swift in Sources */,
 				45C035322A21263500E304FF /* Constants.swift in Sources */,
 				45FDE0012DDA10000000001 /* features.swift in Sources */,
+				45B000012F13A00000000006 /* SpeechRecognitionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -462,3 +470,4 @@
 	};
 	rootObject = 45D1EF6C2A20DA2D0029FACD /* Project object */;
 }
+

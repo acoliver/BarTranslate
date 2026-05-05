@@ -3,12 +3,13 @@
 //  BarTranslate
 //
 //  Created by Thijmen Dam on 28/05/2023.
-//  Redesigned UI + Feature overlays: copy button, char counter
+//  Redesigned UI + Feature overlays: copy button, char counter, mic button
 //
 
 import Foundation
 import SwiftUI
 import WebKit
+import Speech
 
 // MARK: - TranslateView
 
@@ -47,6 +48,8 @@ struct TranslateView: View {
                         // Character counter – bottom left
                         CharCounterBadge(count: BT.characterCount)
                         Spacer()
+                        // Mic button – bottom center-right
+                        MicButton(BT: BT)
                         // Copy button – bottom right
                         CopyResultButton(BT: BT, provider: translationProvider)
                     }
@@ -83,6 +86,55 @@ struct CharCounterBadge: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 .animation(.easeInOut(duration: 0.2), value: count)
         }
+    }
+}
+
+// MARK: - Microphone Button
+
+struct MicButton: View {
+    @ObservedObject var BT: BarTranslate
+    @StateObject private var speechService = SpeechRecognitionService()
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: toggleMic) {
+            HStack(spacing: 5) {
+                Image(systemName: speechService.isListening ? "mic.fill" : "mic")
+                    .font(.system(size: 11, weight: .medium))
+                if speechService.isListening {
+                    Text("Listening…")
+                        .font(.system(size: 11, weight: .medium))
+                }
+            }
+            .foregroundColor(speechService.isListening ? Color(NSColor.systemRed) : (isHovered ? .primary : .secondary))
+            .padding(.horizontal, speechService.isListening ? 12 : 8)
+            .padding(.vertical, 5)
+            .background(speechService.isListening ? Color(NSColor.systemRed).opacity(0.15) : Color.clear)
+            .background(.ultraThinMaterial)
+            .cornerRadius(7)
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(
+                        speechService.isListening
+                            ? Color(NSColor.systemRed).opacity(0.5)
+                            : Color(NSColor.separatorColor).opacity(isHovered ? 0.6 : 0.3),
+                        lineWidth: 0.5
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { isHovered = $0 }
+        .animation(.easeInOut(duration: 0.18), value: speechService.isListening)
+        .onAppear {
+            speechService.onResult = { [self] text in
+                guard let webView = self.BT.webView else { return }
+                injectClipboardText(webView: webView, text: text)
+            }
+        }
+    }
+
+    private func toggleMic() {
+        speechService.toggleListening()
     }
 }
 
