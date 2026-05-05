@@ -120,7 +120,34 @@ enum BarTranslateApplication {
   static func main() {
     let application = NSApplication.shared
     application.delegate = appDelegate
+    application.mainMenu = buildMainMenu()
     application.run()
+  }
+
+  private static func buildMainMenu() -> NSMenu {
+    let mainMenu = NSMenu()
+
+    // Application submenu (required for macOS to recognize the menu bar)
+    let appMenuItem = NSMenuItem()
+    mainMenu.addItem(appMenuItem)
+    let appSubmenu = NSMenu(title: "BarTranslateACO")
+    appSubmenu.addItem(withTitle: "Quit BarTranslateACO", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    appMenuItem.submenu = appSubmenu
+
+    // Edit submenu — provides standard Cmd+C/V/A etc. shortcuts
+    let editMenuItem = NSMenuItem()
+    mainMenu.addItem(editMenuItem)
+    let editSubmenu = NSMenu(title: "Edit")
+    editSubmenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+    editSubmenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+    editSubmenu.addItem(NSMenuItem.separator())
+    editSubmenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+    editSubmenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+    editSubmenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+    editSubmenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+    editMenuItem.submenu = editSubmenu
+
+    return mainMenu
   }
 }
 
