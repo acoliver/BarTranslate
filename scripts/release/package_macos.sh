@@ -34,6 +34,7 @@ bundle_identifier="${BARTRANSLATE_BUNDLE_IDENTIFIER:-com.acoliver.BarTranslateAC
 app_display_name="${BARTRANSLATE_APP_NAME:-BarTranslateACO}"
 team_id="${APPLE_TEAM_ID:-}"
 signing_identity="${APPLE_SIGNING_IDENTITY:-}"
+entitlements_path="${repo_root}/BarTranslate/BarTranslate.entitlements"
 notary_zip_path="${artifact_dir}/notarization-${asset_name}"
 
 rm -rf "${artifact_dir}"
@@ -108,7 +109,7 @@ else
     "${common_build_settings[@]}"
 
   ditto "${archive_path}/Products/Applications/BarTranslateACO.app" "${unsigned_app_path}"
-  codesign --force --deep --sign - "${unsigned_app_path}"
+  codesign --force --deep --sign - --options runtime --entitlements "${entitlements_path}" "${unsigned_app_path}"
   mkdir -p "${export_path}"
   ditto "${unsigned_app_path}" "${app_path}"
 fi
@@ -119,6 +120,13 @@ if [[ ! -d "${app_path}" ]]; then
 fi
 
 codesign --verify --deep --strict --verbose=2 "${app_path}"
+
+if [[ "${signing_mode}" == "ad-hoc" ]]; then
+  entitlements_check_path="${artifact_dir}/entitlements.plist"
+  codesign -d --entitlements :- "${app_path}" > "${entitlements_check_path}" 2>/dev/null
+  /usr/libexec/PlistBuddy -c "Print :com.apple.security.device.audio-input" "${entitlements_check_path}" >/dev/null
+  /usr/libexec/PlistBuddy -c "Print :com.apple.security.personal-information.speech-recognition" "${entitlements_check_path}" >/dev/null
+fi
 
 if [[ "${signing_mode}" == "developer-id" && "${BARTRANSLATE_NOTARIZE:-1}" != "0" ]]; then
   if [[ -z "${APPLE_ID:-}" || -z "${APPLE_APP_SPECIFIC_PASSWORD:-}" || -z "${team_id}" ]]; then
