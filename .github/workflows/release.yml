@@ -17,7 +17,7 @@ permissions:
 jobs:
   release:
     name: Build and publish macOS release
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       BARTRANSLATE_APP_NAME: BarTranslateACO
       BARTRANSLATE_BUNDLE_IDENTIFIER: com.acoliver.BarTranslateACO
